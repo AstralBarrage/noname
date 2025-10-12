@@ -4563,9 +4563,8 @@ const skills = {
 		async content(event, trigger, player) {
 			const target = event.targets[0];
 			const num = Math.min(5, target.maxHp) - target.countCards("h");
-			const isMax = target.isMaxHandcard();
 			if (num > 0) {
-				await target.drawTo(target.maxHp);
+				await target.draw(num);
 			} else if (num < 0 && target.countDiscardableCards(target, "h") > 0) {
 				await target.chooseToDiscard("h", -num, true, "allowChooseAll");
 			}
@@ -14099,7 +14098,7 @@ const skills = {
 						const cardname = "huashen_card_" + list[i];
 						lib.card[cardname] = {
 							fullimage: true,
-							image: "character/" + list[i],
+							image: "character:" + list[i],
 						};
 						lib.translate[cardname] = get.rawName2(list[i]);
 						cards.push(game.createCard(cardname, "", ""));
@@ -25421,13 +25420,17 @@ const skills = {
 		check(event, player) {
 			return player.phaseNumber < 3;
 		},
-		content() {
-			if (player.phaseNumber < 5) {
-				player.gainMaxHp();
-				player.recover();
-			} else {
-				player.loseMaxHp();
-			}
+		logAudio(event, player) {
+    		const num = (player.phaseNumber < 5) ? 1 : 2;
+    		return `zhaohan${num}.mp3`;
+		},
+		async content(event, trigger, player) {
+    		if (player.phaseNumber < 5) {
+        		await player.gainMaxHp();
+        		await player.recover();
+    		} else {
+        		await player.loseMaxHp();
+    		}
 		},
 	},
 	rangjie: {

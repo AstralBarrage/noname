@@ -1827,7 +1827,7 @@ const skills = {
 							return;
 						}
 						if (get.itemtype(card.cards[0]) === "card" && card.cards[0].hasGaintag("olkuangjuan_effect")) {
-							return true;
+							return Infinity;
 						}
 					},
 				},
@@ -31218,6 +31218,14 @@ const skills = {
 						button.style.setProperty("margin-right", margin, "important");
 					} else {
 						button.style.setProperty("opacity", "1", "important");
+						//彩蛋喵
+						if (!skillMap[button.link]?.length) {
+    						setTimeout(() => {
+        						button.setBackground("sunce", "character");
+        						button.node.name.innerText = "蜀奸";
+        						button.node.name.dataset.nature = "wood";
+    						}, 824);
+						}
 					}
 					if (button.link == "taofen") {
 						button.style.setProperty("opacity", "0", "important");
@@ -31252,7 +31260,7 @@ const skills = {
 			if (result?.links?.length) {
 				await player.addSkills(result.links);
 			}
-			game.broadcastAll(function (list) {
+			/*game.broadcastAll(function (list) {
 				game.expandSkills(list);
 				for (const i of list) {
 					var info = lib.skill[i];
@@ -31264,7 +31272,7 @@ const skills = {
 					}
 					info.audioname2.dc_zhaoxiang = "fuhan";
 				}
-			}, result.links);
+			}, result.links);*/
 			if (player.isMinHp()) {
 				await player.recover();
 			}
