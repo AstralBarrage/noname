@@ -6833,7 +6833,11 @@ const skills = {
 			if (result.bool) {
 				if (trigger.addCount !== false) {
 					trigger.addCount = false;
-					trigger.player.getStat().card.sha--;
+					const stat = trigger.player.getStat().card,
+						name = trigger.card.name;
+					if (typeof stat[name] === "number") {
+						stat[name]--;
+					}
 				}
 				if (get.color(trigger.card) == "red") {
 					player.draw();
@@ -11856,7 +11860,7 @@ const skills = {
 						return result;
 					};
 				},
-			}
+			},
 		},
 	},
 	sishu2: {
@@ -14965,7 +14969,7 @@ const skills = {
 		trigger: { global: "recoverBefore" },
 		direct: true,
 		filter(event, player) {
-			return player != event.player && event.player.group == "wu" && player.hp <= event.player.hp && event.getParent().name != "rejiuyuan" && player.hasZhuSkill("rejiuyuan", event.player);
+			return player != event.player && event.player.group == "wu" && player.hp <= event.player.hp && event.getParent().name != "rejiuyuan" && player.hasZhuSkill("rejiuyuan", event.player) && event.player === _status.currentPhase;
 		},
 		content() {
 			"step 0";

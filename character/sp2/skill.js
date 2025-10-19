@@ -307,10 +307,13 @@ const skills = {
 							player: "useCard1",
 						})
 						.step(async (event, trigger, player) => {
-							const { card } = trigger;
 							if (trigger.addCount !== false) {
 								trigger.addCount = false;
-								player.getStat("card")[card.name]--;
+								const stat = player.getStat().card,
+									name = trigger.card.name;
+								if (typeof stat[name] === "number") {
+									stat[name]--;
+								}
 							}
 						})
 						.assign({
@@ -1122,7 +1125,7 @@ const skills = {
 		async content(event, trigger, player) {
 			player.awakenSkill(event.name);
 			const target = event.target;
-			await target.addSkills("starchengfeng");
+			const list = ["starchengfeng"];
 			if (
 				target.isZhu2() &&
 				!target.getSkills(null, false, false).filter(skill => {
@@ -1133,8 +1136,9 @@ const skills = {
 					return true;
 				}).length
 			) {
-				await target.addSkills("startongyin");
+				list.push("startongyin");
 			}
+			await target.addSkills(list);
 			const targets = game.filterPlayer(current => current != target && current.countCards("he"));
 			let targetx;
 			if (!targets.length) {
@@ -1142,16 +1146,15 @@ const skills = {
 			} else if (targets.length == 1) {
 				targetx = targets[0];
 			} else {
-				const result = await player
+				const { result } = await player
 					.chooseTarget(`令另一名角色将牌置于${get.translation(target)}武将牌上`, true, function (card, player, target) {
 						return target != get.event("gainer") && target.countCards("he");
 					})
 					.set("gainer", target)
 					.set("ai", target => {
 						return get.attitude(get.player(), target) * target.countCards("he");
-					})
-					.forResult();
-				if (result.bool) {
+					});
+				if (result?.targets?.length) {
 					targetx = result.targets[0];
 				} else {
 					return;
@@ -1161,14 +1164,13 @@ const skills = {
 			for (let card of targetx.getCards("he")) {
 				suits.add(get.suit(card));
 			}
-			const result = await targetx
+			const { result } = await targetx
 				.chooseCard("he", true, suits.length)
 				.set("complexCard", true)
 				.set("filterCard", card => {
 					return ui.selected.cards.every(cardx => get.suit(cardx) != get.suit(card));
-				})
-				.forResult();
-			if (result.bool) {
+				});
+			if (result?.cards?.length) {
 				const next = target.addToExpansion(result.cards, targetx, "give");
 				next.gaintag.add("starchengfeng");
 				await next;
@@ -3669,7 +3671,11 @@ const skills = {
 				content() {
 					if (trigger.addCount !== false) {
 						trigger.addCount = false;
-						trigger.player.getStat().card.sha--;
+						const stat = player.getStat().card,
+							name = trigger.card.name;
+						if (typeof stat[name] === "number") {
+							stat[name]--;
+						}
 					}
 					player.addTempSkill("dcjiaoxia_mark", "phaseUseAfter");
 					player.markAuto(
@@ -6644,7 +6650,11 @@ const skills = {
 			trigger.directHit.addArray(game.players);
 			if (player == trigger.player && trigger.addCount !== false) {
 				trigger.addCount = false;
-				player.getStat().card.sha--;
+				const stat = player.getStat().card,
+					name = trigger.card.name;
+				if (typeof stat[name] === "number") {
+					stat[name]--;
+				}
 			}
 		},
 	},
@@ -7543,7 +7553,11 @@ const skills = {
 		},
 		content() {
 			trigger.addCount = false;
-			player.getStat().card.sha--;
+			const stat = player.getStat().card,
+				name = trigger.card.name;
+			if (typeof stat[name] === "number") {
+				stat[name]--;
+			}
 		},
 	},
 	//辛评

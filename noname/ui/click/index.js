@@ -1,9 +1,4 @@
-import { ui } from "../index.js";
-import { lib } from "../../library/index.js";
-import { game } from "../../game/index.js";
-import { get } from "../../get/index.js";
-import { _status } from "../../status/index.js";
-
+import { lib, game, get, _status, ui } from "@noname";
 export class Click {
 	/**
 	 * @type {() => void}
@@ -960,6 +955,21 @@ export class Click {
 			uiintro.addSmall([list, "card"]);
 		} else {
 			uiintro.add('<div class="text center" style="padding-bottom:3px">无</div>');
+		}
+		return uiintro;
+	}
+	commonCardPileButton() {
+		var uiintro = ui.create.dialog("hidden");
+		uiintro.listen(function (e) {
+			e.stopPropagation();
+		});
+		for (const [key, value] of lib.commonArea) {
+			const cards = _status[value.areaStatusName];
+			uiintro.add(`<div class="text center">${value.translate || get.translation(key)} (${get.cnNumber(cards?.length ?? 0)}张)</div>`);
+			if (get.itemtype(cards) == "cards") {
+				uiintro.addSmall([cards, "card"]);
+			}
+			uiintro.add(ui.create.div(".placeholder"));
 		}
 		return uiintro;
 	}
