@@ -7649,6 +7649,7 @@ const skills = {
 	//SP马超二号
 	twodcspzhuiji: {
 		audio: "zhuiji",
+		audioname2: { matie: "zhuiji_matie" },
 		trigger: { player: "useCardAfter" },
 		filter(event, player) {
 			return event.targets?.some(i => i !== player && !player.getStorage("twodcspzhuiji_buff").includes(i));
@@ -7676,6 +7677,7 @@ const skills = {
 			},
 		},
 	},
+	zhuiji_matie: { audio: 2 },
 	twodcspshichou: {
 		audio: "ol_shichou",
 		enable: "phaseUse",

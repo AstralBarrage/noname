@@ -87,6 +87,8 @@ window.noname_character_rank = {
 		"eu_yuejin",
 	],
 	a: [
+		"zc26_shen_huangyueying",
+		"scl_jiaxu",
 		"xuwen",
 		"mark_shen_machao",
 		"tw_zhenji",
@@ -1536,6 +1538,13 @@ window.noname_character_rank = {
 		"guotiying",
 	],
 	bm: [
+		"std_huangwudie",
+		"std_qinghegongzhu",
+		"std_quyi",
+		"std_wenyuan",
+		"std_xushao",
+		"std_zhangxuan",
+		"std_jushou",
 		"std_simahui",
 		"std_zhengxuan",
 		"std_miheng",
@@ -2158,6 +2167,8 @@ window.noname_character_rank = {
 	],
 	rarity: {
 		legend: [
+			"zc26_shen_huangyueying",
+			"scl_jiaxu",
 			"x_yao_yuanshu",
 			"zj_liuyuan",
 			"zj_zhonghui",
@@ -2947,6 +2958,13 @@ window.noname_character_rank = {
 			"guotiying",
 		],
 		rare: [
+			"std_huangwudie",
+			"std_qinghegongzhu",
+			"std_quyi",
+			"std_wenyuan",
+			"std_xushao",
+			"std_zhangxuan",
+			"std_jushou",
 			"xy_caocao",
 			"xy_chengyu",
 			"xy_chengong",
