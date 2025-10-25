@@ -1,5 +1,5 @@
 import { Character } from "../../../../noname/library/element/index.js";
-import { _status, get } from "../../../../noname.js";
+import { _status, get, lib } from "../../../../noname.js";
 
 const bool = _status.connectMode ? lib.configOL.jinEx : get.config("jinEx");
 
@@ -807,6 +807,16 @@ export default {
 		maxHp: 4,
 		hujia: 0,
 		skills: ["gz_ol_quanji", "gz_ol_paiyi", "gz_yaopan"],
+		dieAudios: ["zhonghui"],
+	}),
+	gz_ol_wuyi: new Character({
+		sex: "male",
+		group: "shu",
+		hp: 4,
+		maxHp: 4,
+		hujia: 0,
+		skills: ["gz_ol_benxi", "gz_ol_zhuanzheng"],
+		dieAudios: ["wuyi"],
 	}),
 };
 
