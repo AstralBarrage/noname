@@ -2454,7 +2454,10 @@ const skills = {
 							return current2.countCards("h") > current.countCards("h");
 						});
 					})
-					.countCards("h");
+					?.countCards("h");
+				if (!maxNum) {
+					return;
+				}
 				const leastDiscardNum = num - maxNum + 1;
 				const prompt = logged ? `是否将手牌弃置至不为最多？` : get.prompt("starminghui");
 				const next = player

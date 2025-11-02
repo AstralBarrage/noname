@@ -8507,7 +8507,7 @@ const skills = {
 						]),
 						(item, type, position, noclick, node) => {
 							node = ui.create.buttonPresets.card(item[0], type, position, noclick);
-							game.creatButtonCardsetion(item[1], node);
+							game.createButtonCardsetion(item[1], node);
 							return node;
 						},
 					],
@@ -10630,7 +10630,7 @@ const skills = {
 		},
 		filter(event, player) {
 			const evt = event.getl(player);
-			return evt && (evt.es.length || evt.cards2.length > 1);
+			return evt && (evt.es.length || evt.cards2.length > 1) && game.hasPlayer(current => current != player && current.countDiscardableCards(player, "he"));
 		},
 		getIndex: () => 2,
 		async cost(event, trigger, player) {
@@ -10647,9 +10647,9 @@ const skills = {
 				})
 				.forResult();
 		},
-		content() {
+		async content(event, trigger, player) {
 			const target = event.targets[0];
-			player.discardPlayerCard(target, "he", true);
+			await player.discardPlayerCard(target, "he", true);
 		},
 		ai: {
 			reverseEquip: true,
