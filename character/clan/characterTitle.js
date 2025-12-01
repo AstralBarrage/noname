@@ -1,4 +1,6 @@
 export default {
+	//clan_chenqun: "",
+	//clan_xunyu: "",
 	clan_wangshen: "崇虎田光",
 	clan_wuxian: "庄姝晏晏",
 	clan_wuban: "豪侠督进",

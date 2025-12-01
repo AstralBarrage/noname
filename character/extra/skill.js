@@ -4,20 +4,57 @@ import { lib, game, ui, get, ai, _status } from "../../noname.js";
 const skills = {
 	//新杀神孙权
 	dccangming: {
+		async addToExpansionMultiple(event, trigger, player) {
+			event.type = "addToExpansion";
+			const { animate, lose_list, fromStorage, gaintag, delay } = event;
+			if (animate == "give") {
+				event.visible = true;
+			}
+			const cards = [];
+			event.cards = cards;
+			for (let i = 0; i < lose_list.length; i++) {
+				const list = lose_list[i];
+				const next = list[0].addToExpansion(...list.slice(1), animate, false);
+				if (typeof fromStorage == "string" && Array.from(lib.commonArea.keys()).some(area => lib.commonArea.get(area)?.fromName == fromStorage)) {
+					next.fromStorage = true;
+					next[fromStorage] = true;
+				}
+				next.gaintag.addArray(gaintag);
+				cards.addArray(list[1]);
+				next.getlx = false;
+				await next;
+			}
+			if (delay != false) {
+				if (event.waitingForTransition) {
+					_status.waitingForTransition = event.waitingForTransition;
+					game.pause();
+				} else {
+					await game.delayx();
+				}
+			}
+		},
 		audio: 2,
 		trigger: {
 			global: "gameDrawAfter",
 		},
 		forced: true,
 		filter(event, player) {
-			return game.countPlayer(() => true) > 0;
+			return !!game.countPlayer(target => target.countCards("h") > 0);
 		},
 		logTarget() {
-			return game.filterPlayer(() => true);
+			return game.filterPlayer(target => target.countCards("h") > 0);
 		},
 		async content(event, trigger, player) {
-			const { name } = event;
-			const func = async target => {
+			const { name, targets } = event;
+			const lose_list = [];
+			targets.sortBySeat().forEach(target => lose_list.push([target, target.getCards("h")]));
+			await game.loseAsync({
+				lose_list: lose_list,
+				player: player,
+				animate: "giveAuto",
+				gaintag: [name],
+			}).setContent(get.info(event.name).addToExpansionMultiple);
+			/*const func = async target => {
 				if (!target.countCards("h")) {
 					return;
 				}
@@ -25,7 +62,7 @@ const skills = {
 				next.gaintag.add(name);
 				await next;
 			};
-			await game.doAsyncInOrder(event.targets, func);
+			await game.doAsyncInOrder(event.targets, func);*/
 		},
 		marktext: "溟",
 		intro: {
@@ -40,7 +77,28 @@ const skills = {
 			},
 		},
 		global: "dccangming_gain",
+		group: "dccangming_draw",
 		subSkill: {
+			draw: {
+				trigger: {
+					global: ["addToExpansionAfter", "loseAsyncAfter"],
+				},
+				filter(event, player) {
+					if (event.getlx == false) {
+						return false;
+					}
+					if (event.name == "loseAsync" && event.type != "addToExpansion") {
+						return false;
+					}
+					return event.gaintag?.includes("dccangming");
+				},
+				forced: true,
+				async content(event, trigger, player) {
+					const { cards } = trigger;
+					const types = cards.map(card => get.type2(card)).unique();
+					await player.draw(types.length);
+				}
+			},
 			gain: {
 				trigger: {
 					player: ["phaseBegin", "damageEnd"],
@@ -78,7 +136,7 @@ const skills = {
 			event.set("dcchouxiList", list);
 		},
 		filter(event, player) {
-			if (!event.dcchouxiList?.length || !player.countCards("h")) {
+			if (!event.dcchouxiList?.length || !player.countCards("hs")) {
 				return false;
 			}
 			return event.dcchouxiList.some(name => {
@@ -112,7 +170,7 @@ const skills = {
 						},
 					},
 					filterCard: true,
-					position: "h",
+					position: "hes",
 					check(card) {
 						return 5 - get.value(card);
 					},
@@ -124,7 +182,7 @@ const skills = {
 				};
 			},
 			prompt(links, player) {
-				return `将一张手牌当作${get.translation(links[0][2])}使用`;
+				return `将一张牌当作${get.translation(links[0][2])}使用`;
 			},
 		},
 		locked: false,
@@ -141,6 +199,7 @@ const skills = {
 			},
 		},
 		ai: {
+			combo: ["dccangming", "dcjichao"],
 			order: 8,
 			result: {
 				player: 1,
@@ -159,13 +218,13 @@ const skills = {
 		enable: "phaseUse",
 		usable: 1,
 		filter(event, player) {
-			return game.hasPlayer(current => current != player && current.countCards("h") > 0);
+			return game.hasPlayer(current => current != player && current.countCards("he") > 0);
 		},
 		chooseButton: {
 			dialog(event, player) {
 				const choiceList = [
-					["one", "令一名其他角色将随机一半手牌（向上取整）置于武将牌上"],
-					["all", "令所有其他角色将手牌置于武将牌上"],
+					["one", "令一名其他角色将随机一半手牌（向上取整）和装备区的牌置于武将牌上"],
+					["all", "令所有其他角色将所有牌置于武将牌上"],
 				];
 				const dialog = ui.create.dialog("激潮", [choiceList, "textbutton"], "hidden");
 				dialog.direct = true;
@@ -195,28 +254,39 @@ const skills = {
 						}
 						return 1;
 					},
-					async contentBefore(event, trigger, player) {
-						const { choice } = get.info("dcjichao_backup");
-						if (choice == "all") {
-							player.addTempSkill("dcjichao_blocker", { source: "die" });
-						}
-					},
+					multitarget: true,
+					multiline: true,
 					async content(event, trigger, player) {
-						const { target, name } = event,
-							{ choice } = get.info(name);
-						let cards = target.getCards("h");
-						if (choice !== "all") {
-							let num = Math.ceil(cards.length / 2);
-							if (num > 0) {
-								cards = cards.randomGets(num);
+						const { targets, name } = event;
+						const { choice } = get.info(name);
+						if (choice == "all") {
+							player.addTempSkill("dcjichao_blocker", { player: "dieAfter" });
+						}
+						const getCards = function(target) {
+							let cards = target.getCards("h");
+							if (choice !== "all") {
+								let num = Math.ceil(cards.length / 2);
+								if (num > 0) {
+									cards = cards.randomGets(num);
+								}
 							}
+							cards = [...cards, ...target.getCards("e")];
+							return cards;
 						}
-						if (!cards.length) {
-							return;
+						if (choice == "all") {
+							await game.loseAsync({
+								lose_list: targets.sortBySeat().map(target => [target, getCards(target)]),
+								player: player,
+								animate: "giveAuto",
+								gaintag: ["dccangming"],
+							}).setContent(get.info("dccangming").addToExpansionMultiple);
 						}
-						const next = target.addToExpansion(cards, target, "giveAuto");
-						next.gaintag.add("dccangming");
-						await next;
+						else {
+							const [target] = targets;
+							const next = target.addToExpansion(getCards(target), target, "giveAuto");
+							next.gaintag.add("dccangming");
+							await next;
+						}
 					},
 					ai1: () => 1,
 					ai2(target) {
@@ -227,9 +297,9 @@ const skills = {
 			},
 			prompt(links, player) {
 				if (links[0] == "all") {
-					return "令所有其他角色将手牌置于武将牌上，称为“溟”";
+					return "令所有其他角色将所有牌置于武将牌上，称为“溟”";
 				}
-				return "令一名其他角色将随机一半手牌（向上取整）置于武将牌上，称为“溟”";
+				return "令一名其他角色将随机一半手牌（向上取整）和装备区的牌置于武将牌上，称为“溟”";
 			},
 		},
 		ai: {
@@ -269,6 +339,27 @@ const skills = {
 		subSkill: {
 			blocker: {
 				charlotte: true,
+				silent: true,
+				init(player, skill) {
+					player.addMark(skill, 3, false);
+				},
+				onremove: true,
+				intro: {
+					content: "还需造成#点伤害",
+				},
+				trigger: {
+					source: "damage",
+				},
+				filter(event, player) {
+					return event.num > 0;
+				},
+				async content(event, trigger, player) {
+					const { num } = trigger;
+					player.removeMark(event.name, num, false);
+					if (!player.hasMark(event.name)) {
+						player.removeSkill(event.name);
+					}
+				}
 			},
 			backup: {},
 		},
@@ -1119,13 +1210,13 @@ const skills = {
 				});
 			} else {
 				delete evt.result.used;
+				delete evt.result.skill;
 				evt.result.card = get.autoViewAs({
 					name: name,
 					storage: { mark_shouli: true },
 					isCard: true,
 				});
 				evt.result.cards = [];
-				evt.result._apply_args = { addSkillCount: false };
 				evt.redo();
 				return;
 			}
@@ -2576,17 +2667,19 @@ const skills = {
 	},
 	fengliao: {
 		audio: 2,
-		zhuanhuanji: true,
+		zhuanhuanji(player, skill) {
+			player.storage[skill] = !player.storage[skill];
+			get.info(skill).init(player, skill);
+		},
+		init(player, skill) {
+			player.addTip(skill, `${get.translation(skill)} ${player.storage[skill] ? "伤害" : "摸牌"}`);
+		},
+		onremove(player, skill) {
+			player.removeTip(skill);
+		},
 		mark: true,
 		marktext: "☯",
-		intro: {
-			content(storage) {
-				if (storage) {
-					return "你使用牌指定唯一目标后，你对其造成1点火焰伤害。";
-				}
-				return "你使用牌指定唯一目标后，你令其摸一张牌。";
-			},
-		},
+		intro: { content: storage => `你使用牌指定唯一目标后，你${storage ? "对其造成1点火焰伤害" : "令其摸一张牌"}` },
 		trigger: { player: "useCardToPlayered" },
 		filter(event, player) {
 			return event.targets.length == 1;
@@ -2594,17 +2687,17 @@ const skills = {
 		forced: true,
 		logTarget: "target",
 		async content(event, trigger, player) {
-			player.changeZhuanhuanji("fengliao");
+			player.changeZhuanhuanji(event.name);
 			const { target } = trigger;
-			if (player.storage.fengliao) {
+			if (player.storage[event.name]) {
 				await target.draw();
 			} else {
-				await target.damage("fire", player);
+				await target.damage("fire");
 			}
 		},
 		mod: {
 			aiOrder(player, card, num) {
-				if (num > 0) {
+				if (typeof card == "object" && num > 0) {
 					const select = get.info(card).selectTarget;
 					let range;
 					if (select == undefined) {
@@ -2654,7 +2747,7 @@ const skills = {
 					if (_status._fengliao_check) {
 						return;
 					}
-					if (!(typeof card !== "object") || !player || !target) {
+					if (typeof card !== "object" || !player || !target) {
 						return;
 					}
 					const select = get.info(card).selectTarget;
@@ -7783,6 +7876,7 @@ const skills = {
 					});
 				} else {
 					delete evt.result.used;
+					delete evt.result.skill;
 					evt.result.card = get.autoViewAs(
 						{
 							name: name,
@@ -7792,7 +7886,6 @@ const skills = {
 						result.links
 					);
 					evt.result.cards = [result.links[0]];
-					evt.result._apply_args = { addSkillCount: false };
 					target.$give(result.links[0], player, false);
 					if (player != target) {
 						target.addTempSkill("fengyin");

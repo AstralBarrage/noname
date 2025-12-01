@@ -10,7 +10,7 @@
  * @typedef { { mode: string, name: string[], name1: string, name2?: string, time: number, video: Video, win: boolean } } Videos
  */
 
-import { _status, lib, get, ai, ui, gnc } from "@noname";
+import { _status, lib, get, ai, ui, gnc } from "noname";
 import { isClass, userAgentLowerCase, Uninstantable, GeneratorFunction, AsyncFunction, delay, nonameInitialized } from "@/util/index.js";
 
 import { DynamicStyle } from "./dynamic-style/index.js";
@@ -786,7 +786,7 @@ export class Game extends GameCompatible {
 	/**
 	 * 基于钩子的添加势力方法
 	 */
-	addGroup(id, short, name, config) {
+	addGroup(id, short, name, config, type = "default") {
 		if (!id) {
 			throw new TypeError();
 		}
@@ -801,7 +801,12 @@ export class Game extends GameCompatible {
 		if (!lib.comparator.typeEquals(short, "string") && short) {
 			name = short;
 		}
-		lib.group.add(id);
+		if (["default", "all"].includes(type)) {
+			lib.group.add(id);
+		}
+		if (["select", "all"].includes(type)) {
+			lib.selectGroup.add(id);
+		}
 		if (short) {
 			lib.translate[id] = short;
 		}
@@ -7791,7 +7796,7 @@ export class Game extends GameCompatible {
 				}
 			}
 			if (prompt != false) {
-				game.log(player1, "将座位移至", player2, "后");
+				game.log(player1, "将座位移至", player2, "前");
 			}
 		} else {
 			game.addVideo("swapSeat", null, [player1.dataset.position, player2.dataset.position]);

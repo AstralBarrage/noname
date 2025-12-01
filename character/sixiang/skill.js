@@ -640,7 +640,7 @@ const skills = {
 					},
 					ai1(button) {
 						const player = get.player();
-						if (!game.hasPlayer(current => player != current && get.attitude(player, target) > 0)) {
+						if (!game.hasPlayer(current => player != current && get.attitude(player, current) > 0)) {
 							return button.links.length;
 						}
 						return 1 / button.links.length;
@@ -1240,8 +1240,12 @@ const skills = {
 						return get.type(card, player) == "equip";
 					},
 					filterTarget(card, player, target) {
+						if (get.position(card) == "e" && target == player) {
+							return false;
+						}
 						return target.canEquip(card, true);
 					},
+					position: "he",
 					ai1(card) {
 						return 6 - get.value(card);
 					},
@@ -1346,7 +1350,7 @@ const skills = {
 		},
 		async content(event, trigger, player) {
 			const cards = event.cost_data,
-				target = trigger.player;
+				target = event.targets[0];
 			await player.give(cards, target);
 			player
 				.when({ global: "phaseDiscardBegin" })
@@ -1355,9 +1359,9 @@ const skills = {
 					if (trigger.stddechong) {
 						return;
 					}
-					trigger.set("stddechong");
+					trigger.set("stddechong", true);
 					const target = trigger.player;
-					if (target.countCards("h") > target.hp) {
+					if (target.countCards("h") >= target.hp) {
 						const result = await player
 							.chooseBool(`得宠：是否对${get.translation(target)}造成1点伤害`)
 							.set("choice", get.damageEffect(target, player, player) > 0)

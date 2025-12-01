@@ -1,4 +1,16 @@
 const characters = {
+	houzhaoning: {
+		sex: "female",
+		group: "qun",
+		hp: 3,
+		skills: ["dcwangzi", "dcherong"],
+	},
+	dc_sb_lvmeng: {
+		sex: "male",
+		group: "wu",
+		hp: 4,
+		skills: ["dcsbhengye", "dcsbyingbo"],
+	},
 	dc_huanjie: {
 		sex: "male",
 		group: "wei",
@@ -733,6 +745,7 @@ const characters = {
 		group: "wei",
 		hp: 4,
 		skills: ["dcctjiuxian", "dcchenyong"],
+		clans: ["颍川陈氏"],
 	},
 	sunyu: {
 		sex: "male",

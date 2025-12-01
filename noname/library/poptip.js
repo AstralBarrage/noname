@@ -1,4 +1,4 @@
-import { game, get, lib } from "@noname";
+import { game, get, lib } from "noname";
 
 /**
  * @type {Map<string, {name: string, info: string}>}
@@ -15,6 +15,7 @@ const _poptipMap = new Map([
 	["rule_beishui", { name: "背水", info: "背水是一种特殊的选项。发动技能时，若无法执行背水的后果，则无法选择背水。选择背水时，可将该技能的其余选项依次执行，再执行背水的后果。" }],
 	["rule_zhengsu", { name: "整肃", info: "技能发动者从擂进、变阵、鸣止中选择一项令目标执行，若其于其回合弃牌阶段结束后未整肃失败，则获得“整肃奖励”。<br><li>整肃奖励：选择一项：1. 摸两张牌；2.回复1点体力。<br><li>擂进：出牌阶段内，使用过至少三张牌，且这些牌的点数均严格递增。<br><li>变阵：出牌阶段内，使用过至少两张牌，且这些牌的花色均相同。<br><li>鸣止：弃牌阶段内，弃置过至少两张牌，且这些牌的花色均不相同。" }],
 	["rule_xieli", { name: "协力", info: "技能发动者从同仇、并进、疏财、勠力中选择一项，然后直到技能时机结束，若你与选择的角色均完成了“协力”，根据技能执行协力奖励。<br><li>同仇：你与其造成的伤害值之和不小于4。<br><li>并进：你与其总计摸过至少8张牌。<br><li>疏财：你与其弃置的牌中包含4种花色。<br><li>勠力：你与其使用或打出的牌中包含4种花色。" }],
+	["rule_rumo", { name: "入魔", info: "每局游戏限一次，当你满足条件后，可入魔。入魔后，每轮结束时，若本轮你未造成过伤害，你失去1点体力。" }],
 	["rule_bianshenji", { name: "变身技", info: `当你满足技能描述的条件时，你获得对应指示物。当该指示物达到上限时，你可以在对应的时间点进入变身状态；当该指示物消耗至0时，你退出变身状态。` }],
 	["rule_bianshen", { name: "变身", info: "进入变身状态时，弃置判定区里的所有牌。变身状态下替换武将牌，两张武将牌血量单独计算" }],
 	["rule_shifa", { name: "施法", info: "若技能的拥有者未拥有等待执行的同名“施法”效果，则其可以发动“施法”技能。其须选择声明一个数字X（X∈[1, 3]），在此之后的第X个回合结束时，其执行“施法”效果，且效果中的数字X视为与技能发动者声明的X相同。" }],
@@ -58,20 +59,39 @@ export class PoptipManager {
 		this.#poptip["rule"] = {
 			idList: Array.from(_poptipMap.keys()),
 		};
-		this.#poptip["skill"] = {
-			get idList() {
-				return Object.keys(lib.skill);
-			},
-		};
 		this.#poptip["card"] = {
 			get idList() {
 				return Object.keys(lib.card);
+			},
+		};
+		this.#poptip["skill"] = {
+			get idList() {
+				return Object.keys(lib.skill);
 			},
 		};
 		this.#poptip["character"] = {
 			idList: [],
 		};
 	}
+
+	/**
+	 * @type {Map<string, string | ((dialog: Dialog, poptip: string) => Dialog)>}
+	 */
+	createDialog = new Map([
+		["cardDialog", (dialog, poptip) => {
+			dialog.addSmall([[poptip], "vcard"]);
+			const node = dialog.buttons[0];
+			get.nodeintro(node, null, null, dialog);
+			return dialog;
+		}],
+		["characterDialog", (dialog, poptip) => {
+			const name = poptip.startsWith("character_") ? poptip.slice(10) : poptip;
+			dialog.addSmall([[name], "character"]);
+			const node = dialog.buttons[0];
+			get.nodeintro(node, null, null, dialog);
+			return dialog;
+		}],
+	]);
 
 	init() {
 		if (this.#inited) {
@@ -178,10 +198,11 @@ export class PoptipManager {
 	 * @param {string} [poptip.id]
 	 * @param {string} poptip.name 名字，最终显示在translate上的文字
 	 * @param {string} [poptip.info] 解释，最终显示在弹窗里的文字
+	 * @param {(dialog: Dialog, poptip: string) => Dialog} [poptip.dialog] 自定义显示框
 	 * @returns {string} 生成的id
 	 */
 	add(poptip) {
-		let { type = "rule", id, name, info = "" } = poptip;
+		let { type = "rule", id, name, info = "", dialog } = poptip;
 		if (!this.#poptip[type]) {
 			throw new Error(`未注册的poptip类型: ${type}`);
 		} else if (id && (type === "skill" || type === "card")) {
@@ -191,11 +212,17 @@ export class PoptipManager {
 		if (id) {
 			lib.translate[id] = name;
 			lib.translate[id + "_info"] = info;
+			if (dialog) {
+				this.createDialog.set(id, dialog);
+			}
 			this.#poptip[type].idList.add(id);
 		} else {
 			do {
 				id = Math.random().toString(36).slice(-8);
 			} while (this.#customPoptip.has(id));
+			if (dialog) {
+				this.createDialog.set(id, dialog);
+			}
 			this.#customPoptip.set(id, { name, info, type });
 		}
 
@@ -232,7 +259,7 @@ export class HTMLPoptipElement extends HTMLElement {
 		this.addEventListener(lib.config.touchscreen ? "touchstart" : "click", e => {
 			// 保证同一时间只能出现一个poptip框，做完窗口管理后可删
 			game.closePoptipDialog();
-			return get.poptipIntro(this.info, e);
+			return get.poptipIntro(this.dialog, this.getAttribute("poptip") || "", e);
 		});
 	}
 
@@ -255,6 +282,23 @@ export class HTMLPoptipElement extends HTMLElement {
 			default:
 				return name;
 		}
+	}
+	/**
+	 * @return {string | ((dialog: Dialog, poptip: string) => Dialog)}
+	 */
+	get dialog() {
+		const poptip = this.getAttribute("poptip");
+		let dialog;
+		if (this.type == "card") {
+			dialog = lib.poptip.createDialog.get("cardDialog");
+		}
+		if (poptip && lib.poptip.createDialog.has(poptip)) {
+			dialog = lib.poptip.createDialog.get(poptip);
+			if (typeof dialog == "string" && lib.poptip.createDialog.has(dialog)) {
+				dialog = lib.poptip.createDialog.get(dialog)
+			}
+		}
+		return dialog || this.info;
 	}
 	get info() {
 		return lib.poptip.getInfo(this.getAttribute("poptip") || "");

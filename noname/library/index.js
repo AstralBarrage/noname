@@ -8,7 +8,7 @@
  * @typedef { InstanceType<typeof lib.element.NodeWS> } NodeWS
  * @typedef { InstanceType<typeof lib.element.Control> } Control
  */
-import { ai, get, game, _status, ui, gnc } from "@noname";
+import { ai, get, game, _status, ui, gnc } from "noname";
 import { LibInit } from "./init/index.js";
 import { Announce } from "./announce/index.js";
 import { Channel } from "./channel/index.js";
@@ -221,7 +221,7 @@ export class Library {
 		function () {
 			_status.skillOwner = {};
 			//武将包排序
-			let packSort = ["standard", "shenhua", "yijiang", "refresh", "extra", "sp", "xinghuoliaoyuan", "sp2", "mobile", "tw", "yingbian", "offline", "sb", "clan", "huicui", "shiji", "xianding", "jsrg", "onlyOL", "newjiang", "sixiang", "sxrm"];
+			let packSort = ["standard", "shenhua", "yijiang", "refresh", "extra", "sp", "xinghuoliaoyuan", "sp2", "mobile", "tw", "yingbian", "offline", "sb", "clan", "huicui", "shiji", "bingshi", "xianding", "jsrg", "onlyOL", "newjiang", "sixiang", "sxrm"];
 			packSort = packSort.reverse();
 			const packs = Object.keys(lib.characterPack).sort((a, b) => {
 				return packSort.indexOf(b) - packSort.indexOf(a);
@@ -896,7 +896,7 @@ export class Library {
 		qizhengxiangsheng: ["sha", "shan"],
 		juedou: ["sha"],
 		nanman: ["sha"],
-		jiedao: ["jiedao"],
+		jiedao: ["sha"],
 		//所有锦囊都可以用无懈可击响应
 		trick: ["wuxie"],
 		//所有伤害牌都可以用草船借箭响应
@@ -4663,7 +4663,7 @@ export class Library {
 					},
 				},
 				show_commonCardpile: {
-					name: "显示游戏外公共区域按钮",
+					name: "显示公共区域按钮",
 					init: true,
 					unfrequent: true,
 					onclick(bool) {
@@ -4712,6 +4712,15 @@ export class Library {
 					onclick(bool) {
 						game.saveConfig("show_tip", bool);
 						document.documentElement.style.setProperty("--tip-display", bool ? "flex" : "none");
+					},
+				},
+				show_sortPack: {
+					name: "显示武将分包",
+					intro: "开启后，长按/右键查看武将信息时将显示武将所在分包",
+					init: false,
+					unfrequent: true,
+					onclick(bool) {
+						game.saveConfig("show_sortPack", bool);
 					},
 				},
 				show_deckMonitor: {
@@ -10781,6 +10790,7 @@ export class Library {
 			zf_rare: "稀有",
 			zf_epic: "史诗",
 			zf_legend: "传说",
+			assigned_tag: "已分配",
 
 			phaseZhunbei: "准备阶段",
 			phaseJudge: "判定阶段",
@@ -14604,6 +14614,20 @@ export class Library {
 					style.fontFamily = "MotoyaLMaru";
 					style.transform = "scaleY(0.85)";
 					span.textContent = "EU";
+					return span.outerHTML;
+				},
+			},
+		],
+		[
+			"PE",
+			{
+				getSpan: () => {
+					const span = document.createElement("span"),
+						style = span.style;
+					style.writingMode = style.webkitWritingMode = "horizontal-tb";
+					style.fontFamily = "MotoyaLMaru";
+					style.transform = "scaleY(0.85)";
+					span.textContent = "PE";
 					return span.outerHTML;
 				},
 			},

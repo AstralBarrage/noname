@@ -1,6 +1,6 @@
 import { Is } from "./is.js";
 import { Promises } from "./promises.js";
-import { rootURL, game, lib, _status, ui } from "@noname";
+import { rootURL, game, lib, _status, ui } from "noname";
 import * as pinyinPro from "pinyin-pro";
 import NonameDictionary from "./pinyins/noname-dict.js";
 import { Audio } from "./audio.ts";
@@ -4917,8 +4917,8 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 			}
 		}
 	}
-	nodeintro(node, simple, evt) {
-		var uiintro = ui.create.dialog("hidden", "notouchscroll");
+	nodeintro(node, simple, evt, uiintro) {
+		uiintro ??= ui.create.dialog("hidden", "notouchscroll");
 		uiintro.setAttribute("id", "nodeintro");
 		if (node.classList.contains("player") && !node.name) {
 			return uiintro;
@@ -4967,6 +4967,30 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 
 			if (lib.characterAppend[node.name]) {
 				uiintro.addText(get.colorspan(lib.characterAppend[node.name]));
+			}
+
+			if (lib.config.show_sortPack) {
+				for (let packname in lib.characterPack) {
+					if (node.name in lib.characterPack[packname]) {
+						let pack = lib.translate[packname + '_character_config'],
+							sort;
+						if (lib.characterSort[packname]) {
+							let sorted = lib.characterSort[packname];
+							for (let sortname in sorted) {
+								if (sorted[sortname].includes(node.name)) {
+									sort = `<span style = "font-size:small">${lib.translate[sortname]}</span>`;
+									break;
+								}
+							}
+						}
+						const sortPack = document.createElement("div");
+						sortPack.innerHTML = `${pack}${sort ? `<br>[${sort}]` : ""}`;
+						sortPack.appendChild(document.createElement("hr"));
+						sortPack.insertBefore(document.createElement("hr"), sortPack.firstChild);
+						uiintro.add(sortPack);
+						break;
+					}
+				}
 			}
 
 			if (get.characterInitFilter(node.name)) {
@@ -5333,6 +5357,7 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 			if (lib.config.show_favourite && lib.character[node.name] && game.players.includes(node) && (!modepack || !modepack[node.name]) && (!simple || get.is.phoneLayout())) {
 				var addFavourite = ui.create.div(".text.center.pointerdiv");
 				addFavourite.link = node.name;
+				addFavourite.style.marginRight = "15px";
 				if (lib.config.favouriteCharacter.includes(node.name)) {
 					addFavourite.innerHTML = "移除收藏";
 				} else {
@@ -5340,6 +5365,17 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 				}
 				addFavourite.listen(ui.click.favouriteCharacter);
 				uiintro.add(addFavourite);
+			}
+			if (!simple || get.is.phoneLayout()) {
+				let viewInfo = ui.create.div(".text.center.pointerdiv");
+				viewInfo.link = node;
+				viewInfo.innerHTML = "查看资料";
+				viewInfo.listen(function() {
+					let player = this.link;
+					let audioName = player.skin.name || player.name1 || player.name;
+					ui.click.charactercard(player.name1 || player.name, null, null, true, player.node, audioName);
+				});
+				uiintro.add(viewInfo);
 			}
 			if (!simple || get.is.phoneLayout()) {
 				if ((lib.config.change_skin || lib.skin) && !node.isUnseen()) {
@@ -5776,6 +5812,30 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 				uiintro.addText(get.colorspan(lib.characterAppend[node.link]));
 			}
 
+			if (lib.config.show_sortPack) {
+				for (let packname in lib.characterPack) {
+					if (node.link in lib.characterPack[packname]) {
+						let pack = lib.translate[packname + '_character_config'],
+							sort;
+						if (lib.characterSort[packname]) {
+							let sorted = lib.characterSort[packname];
+							for (let sortname in sorted) {
+								if (sorted[sortname].includes(node.link)) {
+									sort = `<span style = "font-size:small">[${lib.translate[sortname]}]</span>`;
+									break;
+								}
+							}
+						}
+						const sortPack = document.createElement("div");
+						sortPack.innerHTML = `${pack}${sort ? `<br>${sort}` : ""}`;
+						sortPack.appendChild(document.createElement("hr"));
+						sortPack.insertBefore(document.createElement("hr"), sortPack.firstChild);
+						uiintro.add(sortPack);
+						break;
+					}
+				}
+			}
+
 			if (get.characterInitFilter(node.link)) {
 				const initFilters = get.characterInitFilter(node.link).filter(tag => {
 					if (!lib.characterInitFilter[node.link]) {
@@ -5905,6 +5965,7 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 					var addFavourite = ui.create.div(".text.center.pointerdiv");
 					addFavourite.link = node.link;
 					addFavourite.style.marginBottom = "15px";
+					addFavourite.style.marginRight = "15px";
 					if (lib.config.favouriteCharacter.includes(node.link)) {
 						addFavourite.innerHTML = "移除收藏";
 					} else {
@@ -5914,6 +5975,16 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 					uiintro.add(addFavourite);
 				} else {
 					uiintro.add(ui.create.div(".placeholder.slim"));
+				}
+				if (!simple || get.is.phoneLayout()) {
+					let viewInfo = ui.create.div(".text.center.pointerdiv");
+					viewInfo.link = node.link;
+					viewInfo.innerHTML = "查看资料";
+					viewInfo.style.marginBottom = "15px";
+					viewInfo.listen(function() {
+						return ui.click.charactercard(this.link, this);
+					});
+					uiintro.add(viewInfo);
 				}
 				var addskin = false;
 				if (node.parentNode.classList.contains("menu-buttons")) {
@@ -6123,14 +6194,19 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 	/**
 	 *
 	 * 弹出特殊名词的解释窗口
-	 * @param {string} info 对应解释在lib.poptip的值
+	 * @param {string | Function} info 对应解释在lib.poptip的值
+	 * @param {string} poptip 此名词的对应id
 	 * @param {PointerEvent|TouchEvent} event 点击事件
 	 */
-	poptipIntro(info, event) {
+	poptipIntro(info, poptip, event) {
 		const uiintro = ui.create.dialog("hidden", "notouchscroll");
 		uiintro.style.zIndex = "21";
 		uiintro.setAttribute("id", "poptip");
-		uiintro._place_text = uiintro.add(`<div class = "text">${info}</div>`);
+		if (typeof info == "string") {
+			uiintro._place_text = uiintro.add(`<div class = "text">${info}</div>`);
+		} else {
+			info(uiintro, poptip);
+		}
 		uiintro.classList.add("popped");
 		uiintro.classList.add("static");
 		ui.window.appendChild(uiintro);
@@ -7283,7 +7359,8 @@ else if (entry[1] !== void 0) stringifying[key] = JSON.stringify(entry[1]);*/
 	 * @param {string} poptip.id 对应特殊名词id
 	 * @param {string} poptip.type 特殊名词的类型
 	 * @param {string} poptip.name 特殊名词
-	 * @param {string} poptip.info 对应解释
+	 * @param {string} [poptip.info] 对应解释
+	 * @param {string | ((dialog: Dialog, poptip: string) => Dialog)} [poptip.dialog] 自定义框
 	 * @returns {string}
 	 */
 	/**

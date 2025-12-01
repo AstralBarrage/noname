@@ -1,4 +1,4 @@
-import { _status, get, lib, game, ai, ui } from "@noname";
+import { _status, get, lib, game, ai, ui } from "noname";
 import { CacheContext } from "../cache/cacheContext.js";
 import { ChildNodesWatcher } from "../cache/childNodesWatcher.js";
 import security from "@/util/security.js";
@@ -2699,7 +2699,8 @@ export class Player extends HTMLDivElement {
 				const goon = hiddenCard(player, name);
 				const bool =
 					!info.filter ||
-					(typeof info.filter === "function" &&
+					(info.enable &&
+						typeof info.filter === "function" &&
 						evtNames.some(evtName => {
 							let evt = event.getParent(evtName);
 							if (get.itemtype(evt) !== "event") {
@@ -2869,19 +2870,11 @@ export class Player extends HTMLDivElement {
 	 * @returns { GameEvent }
 	 */
 	changeGroup(group, log, broadcast) {
-		var next = game.createEvent("changeGroup");
+		const next = game.createEvent("changeGroup");
 		next.player = this;
-		next.log = true;
-		for (var i = 0; i < arguments.length; i++) {
-			var arg = arguments[i];
-			if (lib.group.includes(arg)) {
-				next.group = arg;
-			} else if (typeof arg === "boolean") {
-				next.log = arg;
-			} else if (arg === "nobroadcast") {
-				next.broadcast = false;
-			}
-		}
+		next.group = group;
+		next.log = typeof log === "boolean" ? log : true;
+		next.broadcast = broadcast !== "nobroadcast";
 		next.setContent("changeGroup");
 		return next;
 	}
@@ -7487,29 +7480,30 @@ export class Player extends HTMLDivElement {
 			game.addVideo("directequip", this, get.cardsInfo(cards));
 		}
 	}
-	$addToExpansion(cards, broadcast, gaintag) {
+	$addToExpansion(cards, broadcast, gaintag, check = true) {
 		var hs = this.getCards("x");
 		for (var i = 0; i < cards.length; i++) {
-			if (hs.includes(cards[i])) {
+			if (hs.includes(cards[i]) && check) {
 				cards.splice(i--, 1);
 			}
 		}
 		for (var i = 0; i < cards.length; i++) {
 			cards[i].fix();
 			if (gaintag) {
-				cards[i].addGaintag(gaintag);
+				gaintag.forEach(tag => cards[i].addGaintag(tag));
 			}
 			var sort = lib.config.sort_card(cards[i]);
 			this.node.expansions.insertBefore(cards[i], this.node.expansions.firstChild);
 		}
 		if (broadcast !== false) {
 			game.broadcast(
-				function (player, cards, gaintag) {
-					player.$addToExpansion(cards, null, gaintag);
+				function (player, cards, gaintag, check) {
+					player.$addToExpansion(cards, null, gaintag, check);
 				},
 				this,
 				cards,
-				gaintag
+				gaintag,
+				check
 			);
 		}
 		return this;
@@ -10836,7 +10830,8 @@ export class Player extends HTMLDivElement {
 				expire = { global: expire };
 			}
 			this.tempSkills[skill] = expire;
-
+			const map = lib.relatedTrigger,
+				names = Object.keys(map);
 			if (get.objtype(expire) == "object") {
 				const roles = ["player", "source", "target", "global"];
 				for (const i of roles) {
@@ -10844,7 +10839,15 @@ export class Player extends HTMLDivElement {
 					if (!Array.isArray(triggers)) {
 						triggers = [triggers];
 					}
-					triggers.forEach(trigger => (lib.hookmap[trigger] = true));
+					triggers.forEach(trigger => {
+						lib.hookmap[trigger] = true;
+						const key = names.find(name => trigger?.startsWith(name));
+						if (key) {
+							map[key].forEach(rawTrigger => {
+								lib.hookmap[`${rawTrigger}${trigger.slice(key.length)}`] = true;
+							});
+						}
+					});
 				}
 			}
 			game.broadcast(
